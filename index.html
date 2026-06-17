@@ -233,6 +233,49 @@
   .card.is-unlocked .card__stat,
   .card.is-unlocked .card__title{ filter:none; }
 
+  /* ---------- pages ---------- */
+  .page{ display:none; }
+  .page.is-active{ display:block; }
+
+  .page__header{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--line);
+  }
+  .page__title{ font-family:var(--mono); font-size:18px; color:var(--green); text-shadow:0 0 10px var(--green-glow); }
+  .page__close{ background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:18px; }
+  .page__close:hover{ color:var(--text); }
+
+  .message-list{
+    display:flex; flex-direction:column; gap:12px; margin-bottom:20px; max-height:400px; overflow-y:auto;
+  }
+  .message-item{
+    border:1px solid var(--line); border-radius:4px; padding:12px; background:rgba(20,17,31,.5);
+  }
+  .message-item__from{ font-family:var(--mono); font-size:11px; color:var(--green); margin-bottom:4px; }
+  .message-item__text{ font-size:13px; line-height:1.5; color:var(--text); }
+  .message-item__time{ font-family:var(--mono); font-size:10px; color:var(--text-dim); margin-top:6px; }
+
+  .compose-form{
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .compose-field{ display:flex; flex-direction:column; gap:6px; }
+  .compose-field label{ font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:var(--text-dim); }
+  .compose-field input,
+  .compose-field textarea{
+    background:var(--bg); border:1px solid var(--line); border-radius:4px;
+    padding:10px 12px; color:var(--text); font-family:var(--sans); font-size:13px;
+  }
+  .compose-field textarea{ min-height:80px; resize:vertical; }
+  .compose-field input:focus-visible,
+  .compose-field textarea:focus-visible{
+    outline:2px solid var(--green); outline-offset:1px; border-color:var(--green-soft);
+  }
+
+  .compose-actions{
+    display:flex; gap:10px;
+  }
+  .compose-actions .btn{ flex:1; }
+
   /* ---------- modal ---------- */
   .modal-overlay{
     position:fixed; inset:0; background:rgba(5,4,9,.78);
@@ -331,6 +374,8 @@
     <button class="navitem" data-target="inbox">INBOX <span class="navitem__lock">🔒</span></button>
     <button class="navitem" data-target="profile">PROFILE <span class="navitem__lock">🔒</span></button>
     <button class="navitem" data-target="void">THE VOID <span class="navitem__lock">🔒</span></button>
+    <button class="navitem" data-target="messages" id="messagesNav">MESSAGES <span class="navitem__lock">🔒</span></button>
+    <button class="navitem" data-target="notifications" id="notificationsNav">NOTIFICATIONS <span class="navitem__lock">🔒</span></button>
   </nav>
 
   <div class="gridarea">
@@ -385,6 +430,75 @@
         <button class="btn btn--green unlock-trigger">LOG IN TO UNLOCK</button>
       </div>
     </div>
+
+    <!-- MESSAGES PAGE -->
+    <div class="page" id="messages" style="grid-column:1/-1;">
+      <div class="page__header">
+        <div class="page__title">📨 MEMBER MESSAGES</div>
+        <button class="page__close" onclick="closePage('messages')">✕</button>
+      </div>
+
+      <div style="display:flex; gap:20px; flex-direction:column;">
+        <!-- Recipient List -->
+        <div>
+          <h3 style="font-family:var(--mono); font-size:12px; color:var(--purple); margin:0 0 10px; letter-spacing:.1em;">ACTIVE MEMBERS</h3>
+          <div id="membersList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+        </div>
+
+        <!-- Selected Conversation -->
+        <div>
+          <div id="selectedConversation" style="display:none;">
+            <h3 style="font-family:var(--mono); font-size:12px; color:var(--purple); margin:0 0 10px; letter-spacing:.1em;">CONVERSATION WITH <span id="selectedMemberName" style="color:var(--green);"></span></h3>
+            <div class="message-list" id="messagesList"></div>
+
+            <form class="compose-form" id="messageForm">
+              <div class="compose-field">
+                <label>MESSAGE</label>
+                <textarea id="messageText" placeholder="Type your message..." required></textarea>
+              </div>
+              <div class="compose-actions">
+                <button type="submit" class="btn btn--green">SEND</button>
+                <button type="button" class="btn btn--ghost" onclick="clearSelected()">CLOSE</button>
+              </div>
+            </form>
+          </div>
+
+          <div id="noSelection" style="text-align:center; padding:40px; color:var(--text-dim); font-family:var(--mono); font-size:12px;">
+            SELECT A MEMBER TO START MESSAGING
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS PAGE -->
+    <div class="page" id="notifications" style="grid-column:1/-1;">
+      <div class="page__header">
+        <div class="page__title">🔔 ADMIN NOTIFICATIONS</div>
+        <button class="page__close" onclick="closePage('notifications')">✕</button>
+      </div>
+
+      <div>
+        <h3 style="font-family:var(--mono); font-size:12px; color:var(--purple); margin:0 0 10px; letter-spacing:.1em;">FROM ADMINISTRATORS</h3>
+        <div class="message-list" id="notificationsList"></div>
+
+        <div style="margin-top:20px;">
+          <h3 style="font-family:var(--mono); font-size:12px; color:var(--purple); margin:0 0 10px; letter-spacing:.1em;">SEND MESSAGE TO ADMINS</h3>
+          <form class="compose-form" id="adminMessageForm">
+            <div class="compose-field">
+              <label>SUBJECT</label>
+              <input type="text" id="adminSubject" placeholder="Message subject..." required>
+            </div>
+            <div class="compose-field">
+              <label>MESSAGE</label>
+              <textarea id="adminMessage" placeholder="Your message to admins..." required></textarea>
+            </div>
+            <div class="compose-actions">
+              <button type="submit" class="btn btn--green">SUBMIT</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -419,8 +533,13 @@
 <script>
 (function(){
   const ACCOUNTS_KEY = 'goodbye-world-accounts';
-  let mode = 'login'; // or 'signup'
+  const MESSAGES_KEY = 'goodbye-world-messages';
+  const ADMIN_MESSAGES_KEY = 'goodbye-world-admin-messages';
+  const NOTIFICATIONS_KEY = 'goodbye-world-notifications';
+  
+  let mode = 'login';
   let currentUser = null;
+  let selectedMember = null;
 
   // ---------- helpers ----------
   async function sha256(text){
@@ -448,6 +567,193 @@
       return false;
     }
   }
+
+  function getMessages(){
+    try{
+      const stored = localStorage.getItem(MESSAGES_KEY);
+      return stored ? JSON.parse(stored) : {};
+    }catch(e){
+      return {};
+    }
+  }
+
+  function saveMessages(messages){
+    try{
+      localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  function getNotifications(){
+    try{
+      const stored = localStorage.getItem(NOTIFICATIONS_KEY);
+      return stored ? JSON.parse(stored) : [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  function saveNotifications(notifs){
+    try{
+      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifs));
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  // ---------- messaging functions ----------
+  function getConversationKey(user1, user2){
+    return [user1, user2].sort().join('::');
+  }
+
+  function sendMessage(from, to, text){
+    const messages = getMessages();
+    const key = getConversationKey(from, to);
+    if(!messages[key]) messages[key] = [];
+    messages[key].push({
+      from,
+      text,
+      timestamp: new Date().toLocaleString()
+    });
+    saveMessages(messages);
+  }
+
+  function getConversation(user1, user2){
+    const messages = getMessages();
+    const key = getConversationKey(user1, user2);
+    return messages[key] || [];
+  }
+
+  async function getAllMembers(){
+    const accounts = await getAccounts();
+    return Object.keys(accounts).filter(u => u !== currentUser);
+  }
+
+  function renderMembers(){
+    getAllMembers().then(members => {
+      const list = document.getElementById('membersList');
+      list.innerHTML = members.map(m => `
+        <button class="btn btn--ghost" style="flex:0 0 auto;" onclick="selectMember('${m}')">${m.toUpperCase()}</button>
+      `).join('');
+    });
+  }
+
+  window.selectMember = function(member){
+    selectedMember = member;
+    renderConversation();
+  };
+
+  window.clearSelected = function(){
+    selectedMember = null;
+    renderConversation();
+  };
+
+  function renderConversation(){
+    const convEl = document.getElementById('selectedConversation');
+    const noSelEl = document.getElementById('noSelection');
+
+    if(!selectedMember){
+      convEl.style.display = 'none';
+      noSelEl.style.display = 'block';
+      return;
+    }
+
+    convEl.style.display = 'block';
+    noSelEl.style.display = 'none';
+
+    document.getElementById('selectedMemberName').textContent = selectedMember.toUpperCase();
+    const conv = getConversation(currentUser, selectedMember);
+    const list = document.getElementById('messagesList');
+    list.innerHTML = conv.map(msg => `
+      <div class="message-item">
+        <div class="message-item__from">${msg.from.toUpperCase()}</div>
+        <div class="message-item__text">${msg.text}</div>
+        <div class="message-item__time">${msg.timestamp}</div>
+      </div>
+    `).join('');
+
+    list.scrollTop = list.scrollHeight;
+  }
+
+  document.getElementById('messageForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = document.getElementById('messageText').value.trim();
+    if(text && selectedMember){
+      sendMessage(currentUser, selectedMember, text);
+      document.getElementById('messageText').value = '';
+      renderConversation();
+    }
+  });
+
+  // ---------- admin notifications ----------
+  function renderNotifications(){
+    const notifs = getNotifications();
+    const list = document.getElementById('notificationsList');
+    if(notifs.length === 0){
+      list.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-dim); font-family:var(--mono); font-size:12px;">NO NOTIFICATIONS YET</div>';
+    } else {
+      list.innerHTML = notifs.map((n, i) => `
+        <div class="message-item">
+          <div class="message-item__from">⚙️ ADMIN</div>
+          <div style="font-family:var(--mono); font-size:11px; color:var(--green); margin-bottom:4px;">${n.subject}</div>
+          <div class="message-item__text">${n.text}</div>
+          <div class="message-item__time">${n.timestamp}</div>
+        </div>
+      `).join('');
+    }
+  }
+
+  document.getElementById('adminMessageForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const subject = document.getElementById('adminSubject').value.trim();
+    const text = document.getElementById('adminMessage').value.trim();
+    if(subject && text){
+      // Save message for admins (in real app, this would go to server)
+      const userMsg = {
+        from: currentUser,
+        subject,
+        text,
+        timestamp: new Date().toLocaleString(),
+        type: 'user-to-admin'
+      };
+      const notifs = getNotifications();
+      notifs.push({...userMsg, type: 'user-message-received'});
+      saveNotifications(notifs);
+      
+      document.getElementById('adminSubject').value = '';
+      document.getElementById('adminMessage').value = '';
+      alert('Message sent to admins!');
+    }
+  });
+
+  // Add some default admin notifications
+  function initAdminNotifications(){
+    const notifs = getNotifications();
+    if(notifs.length === 0){
+      saveNotifications([
+        {
+          subject: 'WELCOME',
+          text: 'Welcome to GOODBYE WORLD. We\'re glad you\'re here. Check the guidelines for community standards.',
+          timestamp: new Date(Date.now() - 86400000).toLocaleString()
+        },
+        {
+          subject: 'SYSTEM UPDATE',
+          text: 'Platform maintenance scheduled for next week. No service interruption expected.',
+          timestamp: new Date(Date.now() - 3600000).toLocaleString()
+        }
+      ]);
+      renderNotifications();
+    }
+  }
+
+  // ---------- page navigation ----------
+  window.closePage = function(pageId){
+    document.getElementById(pageId).classList.remove('is-active');
+    document.querySelectorAll('[data-target]').forEach(n => n.classList.remove('is-active'));
+  };
 
   // ---------- modal control ----------
   const overlay = document.getElementById('modalOverlay');
@@ -540,9 +846,11 @@
     currentUser = username;
     renderAuthArea();
     setLockedState(false);
+    initAdminNotifications();
   }
   function logOut(){
     currentUser = null;
+    selectedMember = null;
     renderAuthArea();
     setLockedState(true);
   }
@@ -570,6 +878,8 @@
     document.querySelectorAll('.card--locked').forEach(card => {
       card.classList.toggle('is-unlocked', !locked);
     });
+    document.getElementById('messagesNav').classList.toggle('is-active', !locked);
+    document.getElementById('notificationsNav').classList.toggle('is-active', !locked);
   }
 
   // ---------- side nav scroll + highlight ----------
@@ -577,12 +887,23 @@
     item.addEventListener('click', () => {
       document.querySelectorAll('.navitem').forEach(n => n.classList.remove('is-active'));
       item.classList.add('is-active');
-      const target = document.getElementById(item.dataset.target);
-      if(target){
-        target.scrollIntoView({ behavior:'smooth', block:'center' });
-        target.classList.remove('is-pulsing');
-        requestAnimationFrame(() => target.classList.add('is-pulsing'));
-        setTimeout(() => target.classList.remove('is-pulsing'), 1200);
+      
+      const target = item.dataset.target;
+      if(target === 'messages' || target === 'notifications'){
+        // New page-based navigation
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('is-active'));
+        document.getElementById(target).classList.add('is-active');
+        if(target === 'messages') renderMembers();
+        if(target === 'notifications') renderNotifications();
+      } else {
+        // Old card-based navigation
+        const targetEl = document.getElementById(target);
+        if(targetEl){
+          targetEl.scrollIntoView({ behavior:'smooth', block:'center' });
+          targetEl.classList.remove('is-pulsing');
+          requestAnimationFrame(() => targetEl.classList.add('is-pulsing'));
+          setTimeout(() => targetEl.classList.remove('is-pulsing'), 1200);
+        }
       }
     });
   });

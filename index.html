@@ -431,16 +431,17 @@
 
   async function getAccounts(){
     try{
-      const res = await window.storage.get(ACCOUNTS_KEY, true);
-      return res && res.value ? JSON.parse(res.value) : {};
+      const stored = localStorage.getItem(ACCOUNTS_KEY);
+      return stored ? JSON.parse(stored) : {};
     }catch(e){
+      console.error('Error reading accounts:', e);
       return {};
     }
   }
 
   async function saveAccounts(accounts){
     try{
-      await window.storage.set(ACCOUNTS_KEY, JSON.stringify(accounts), true);
+      localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
       return true;
     }catch(e){
       console.error('Storage error', e);
@@ -590,4 +591,4 @@
 </script>
 
 </body>
-                                                        </html>
+</html>

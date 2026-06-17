@@ -1,9 +1,593 @@
-It's a single self-contained HTML file, so you can open it as-is or drop it on any web host.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOODBYE WORLD!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07060c;
+    --panel:#0f0d1a;
+    --panel-alt:#14111f;
+    --line:#241f38;
+    --purple:#b34dff;
+    --purple-soft:#7d2fd1;
+    --purple-glow:rgba(179,77,255,.45);
+    --green:#2dffa0;
+    --green-soft:#16a87a;
+    --green-glow:rgba(45,255,160,.45);
+    --text:#e9e6f5;
+    --text-dim:#8d87a8;
+    --mono:'Share Tech Mono', monospace;
+    --sans:'Inter', system-ui, sans-serif;
+  }
 
-What's in it:
-- Dark CRT-style theme with neon purple/green glow, subtle scanlines and a flickering banner placeholder ready for your design.
-- Left nav with 6 sections; clicking one smooth-scrolls to and pulses its matching square panel on the right (Dashboard, Transmissions, Archive are open; Inbox, Profile, The Void are locked).
-- Top-right "LOG IN" opens a modal with Login/Sign Up tabs — passwords are SHA-256 hashed client-side before being stored, never in plain text.
-- Logging in (or signing up) unlocks the three locked panels and swaps the button for a username chip with a log-off option.
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    position:relative;
+    overflow-x:hidden;
+  }
 
-One thing worth knowing: account data is saved in this artifact's **shared** storage, so it's visible to anyone using this page — fine for a demo/prototype, but swap in a real backend with proper auth before this handles real users or sensitive passwords.
+  /* ambient scanline / CRT atmosphere */
+  .scanlines{
+    position:fixed; inset:0; pointer-events:none; z-index:999;
+    background:repeating-linear-gradient(
+      to bottom, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px,
+      transparent 2px, transparent 3px
+    );
+    mix-blend-mode:overlay;
+  }
+  .scan-sweep{
+    position:fixed; left:0; right:0; height:140px; z-index:998; pointer-events:none;
+    background:linear-gradient(to bottom, transparent, var(--purple-glow) 40%, var(--green-glow) 60%, transparent);
+    opacity:.06;
+    animation:sweep 9s linear infinite;
+  }
+  @keyframes sweep{
+    0%{ top:-140px; }
+    100%{ top:100vh; }
+  }
+
+  a{color:var(--green);}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 28px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(to bottom, var(--panel), rgba(15,13,26,0));
+    position:relative; z-index:5;
+  }
+  .topbar__mark{
+    font-family:var(--mono);
+    font-size:15px;
+    letter-spacing:.12em;
+    color:var(--purple);
+    text-shadow:0 0 8px var(--purple-glow);
+  }
+  .topbar__mark span{ color:var(--green); text-shadow:0 0 8px var(--green-glow); }
+
+  .auth-area{ display:flex; align-items:center; gap:10px; }
+
+  .btn{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:.08em;
+    padding:9px 16px;
+    border-radius:3px;
+    border:1px solid var(--purple-soft);
+    background:rgba(179,77,255,.08);
+    color:var(--purple);
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .btn:hover{ box-shadow:0 0 14px var(--purple-glow); background:rgba(179,77,255,.16); }
+  .btn:focus-visible{ outline:2px solid var(--green); outline-offset:2px; }
+  .btn--ghost{ border-color:var(--line); color:var(--text-dim); background:transparent; }
+  .btn--ghost:hover{ box-shadow:none; border-color:var(--green-soft); color:var(--green); }
+  .btn--green{ border-color:var(--green-soft); color:var(--green); background:rgba(45,255,160,.08); }
+  .btn--green:hover{ box-shadow:0 0 14px var(--green-glow); background:rgba(45,255,160,.16); }
+
+  .user-chip{
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--mono); font-size:12px; color:var(--green);
+  }
+  .user-chip__dot{ width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); }
+
+  /* ---------- banner ---------- */
+  .banner{
+    margin:22px 28px 0;
+    min-height:200px;
+    border:1px dashed var(--purple-soft);
+    border-radius:6px;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(179,77,255,.10), transparent 55%),
+      radial-gradient(circle at 80% 70%, rgba(45,255,160,.08), transparent 55%),
+      var(--panel);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; gap:6px;
+    position:relative; overflow:hidden;
+  }
+  .banner__title{
+    font-family:var(--mono);
+    font-size:clamp(28px, 5vw, 52px);
+    letter-spacing:.05em;
+    color:var(--text);
+    text-shadow:0 0 14px var(--purple-glow), 0 0 28px var(--green-glow);
+    animation:flicker 6s infinite;
+  }
+  .banner__sub{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:.15em;
+    color:var(--text-dim);
+  }
+  @keyframes flicker{
+    0%,93%,100%{ opacity:1; }
+    94%{ opacity:.4; }
+    95%{ opacity:1; }
+    96%{ opacity:.6; }
+    97%{ opacity:1; }
+  }
+
+  /* ---------- layout ---------- */
+  .layout{
+    display:flex;
+    gap:24px;
+    padding:24px 28px 48px;
+    align-items:flex-start;
+  }
+
+  .sidemenu{
+    flex:0 0 220px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    position:sticky;
+    top:24px;
+  }
+  .sidemenu__label{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.18em;
+    color:var(--text-dim);
+    margin:0 0 8px 4px;
+  }
+  .navitem{
+    font-family:var(--mono);
+    font-size:13px;
+    letter-spacing:.04em;
+    color:var(--text);
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:13px 14px;
+    text-align:left;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    transition:border-color .15s ease, box-shadow .15s ease, color .15s ease;
+  }
+  .navitem:hover{ border-color:var(--purple-soft); box-shadow:0 0 10px var(--purple-glow); }
+  .navitem:focus-visible{ outline:2px solid var(--green); outline-offset:2px; }
+  .navitem.is-active{ border-color:var(--green-soft); color:var(--green); box-shadow:0 0 10px var(--green-glow); }
+  .navitem__lock{ font-size:11px; color:var(--text-dim); }
+
+  .gridarea{
+    flex:1 1 auto;
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:18px;
+  }
+
+  .card{
+    position:relative;
+    aspect-ratio:1/1;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:var(--panel);
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    transition:border-color .25s ease, box-shadow .25s ease;
+    scroll-margin-top:90px;
+  }
+  .card:hover{ border-color:var(--purple-soft); box-shadow:0 0 16px var(--purple-glow); }
+  .card.is-pulsing{ animation:pulse 1.1s ease; }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 var(--green-glow); border-color:var(--green-soft); }
+    40%{ box-shadow:0 0 24px var(--green-glow); border-color:var(--green-soft); }
+    100%{ box-shadow:0 0 16px var(--purple-glow); border-color:var(--purple-soft); }
+  }
+
+  .card__eyebrow{ font-family:var(--mono); font-size:10px; letter-spacing:.16em; color:var(--purple); }
+  .card__title{ font-family:var(--mono); font-size:16px; margin:6px 0 10px; color:var(--text); }
+  .card__body{ font-size:13px; line-height:1.5; color:var(--text-dim); flex:1; overflow:auto; }
+  .card__stat{ font-family:var(--mono); font-size:26px; color:var(--green); text-shadow:0 0 10px var(--green-glow); }
+
+  .card--locked .card__body,
+  .card--locked .card__stat,
+  .card--locked .card__title{ filter:blur(4px); user-select:none; }
+
+  .lockmask{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; text-align:center; padding:16px;
+    background:rgba(7,6,12,.78);
+    backdrop-filter:blur(1px);
+  }
+  .lockmask__icon{ font-size:20px; color:var(--green); text-shadow:0 0 10px var(--green-glow); }
+  .lockmask__text{ font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--text-dim); max-width:160px; }
+
+  .card.is-unlocked .lockmask{ display:none; }
+  .card.is-unlocked .card__body,
+  .card.is-unlocked .card__stat,
+  .card.is-unlocked .card__title{ filter:none; }
+
+  /* ---------- modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(5,4,9,.78);
+    display:none; align-items:center; justify-content:center; z-index:50; padding:20px;
+  }
+  .modal-overlay.is-open{ display:flex; }
+  .modal{
+    width:100%; max-width:360px;
+    background:var(--panel-alt);
+    border:1px solid var(--purple-soft);
+    box-shadow:0 0 30px var(--purple-glow);
+    border-radius:8px;
+    padding:26px;
+  }
+  .modal__tabs{ display:flex; gap:8px; margin-bottom:18px; }
+  .modal__tab{
+    flex:1; text-align:center; padding:9px 0;
+    font-family:var(--mono); font-size:12px; letter-spacing:.08em;
+    border:1px solid var(--line); border-radius:4px; cursor:pointer; color:var(--text-dim);
+    background:transparent;
+  }
+  .modal__tab.is-active{ color:var(--green); border-color:var(--green-soft); box-shadow:0 0 10px var(--green-glow); }
+  .modal__tab:focus-visible{ outline:2px solid var(--green); outline-offset:2px; }
+
+  .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+  .field label{ font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:var(--text-dim); }
+  .field input{
+    background:var(--bg); border:1px solid var(--line); border-radius:4px;
+    padding:10px 12px; color:var(--text); font-family:var(--sans); font-size:13px;
+  }
+  .field input:focus-visible{ outline:2px solid var(--green); outline-offset:1px; border-color:var(--green-soft); }
+
+  .modal__msg{ font-family:var(--mono); font-size:11px; min-height:16px; margin-bottom:10px; }
+  .modal__msg.is-error{ color:#ff5d8f; }
+  .modal__msg.is-ok{ color:var(--green); }
+
+  .modal__row{ display:flex; gap:10px; margin-top:6px; }
+  .modal__row .btn{ flex:1; }
+  .modal__close{
+    display:block; margin:14px auto 0; background:none; border:none; color:var(--text-dim);
+    font-family:var(--mono); font-size:11px; cursor:pointer; letter-spacing:.08em;
+  }
+  .modal__close:hover{ color:var(--text); }
+
+  footer{
+    text-align:center; padding:18px; font-family:var(--mono); font-size:11px;
+    color:var(--text-dim); letter-spacing:.1em; border-top:1px solid var(--line);
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width:980px){
+    .gridarea{ grid-template-columns:repeat(2, 1fr); }
+  }
+  @media (max-width:760px){
+    .layout{ flex-direction:column; }
+    .sidemenu{ flex-direction:row; overflow-x:auto; position:static; width:100%; }
+    .sidemenu__label{ display:none; }
+    .navitem{ flex:0 0 auto; white-space:nowrap; }
+    .gridarea{ grid-template-columns:repeat(2, 1fr); width:100%; }
+  }
+  @media (max-width:480px){
+    .gridarea{ grid-template-columns:1fr; }
+    .card{ aspect-ratio:auto; min-height:170px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .banner__title{ animation:none; }
+    .scan-sweep{ animation:none; opacity:.03; }
+    .card.is-pulsing{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scanlines" aria-hidden="true"></div>
+<div class="scan-sweep" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="topbar__mark">GOODBYE<span>_</span>WORLD<span>//</span></div>
+  <div class="auth-area" id="authArea">
+    <button class="btn" id="loginBtn">LOG IN</button>
+  </div>
+</header>
+
+<section class="banner">
+  <div class="banner__title">[ GOODBYE WORLD! ]</div>
+  <div class="banner__sub">BANNER ZONE — TRANSMISSION PENDING — DESIGN TO COME</div>
+</section>
+
+<div class="layout">
+  <nav class="sidemenu" id="sideMenu" aria-label="Section navigation">
+    <p class="sidemenu__label">NAVIGATE</p>
+    <button class="navitem" data-target="dashboard">DASHBOARD</button>
+    <button class="navitem" data-target="transmissions">TRANSMISSIONS</button>
+    <button class="navitem" data-target="archive">ARCHIVE</button>
+    <button class="navitem" data-target="inbox">INBOX <span class="navitem__lock">🔒</span></button>
+    <button class="navitem" data-target="profile">PROFILE <span class="navitem__lock">🔒</span></button>
+    <button class="navitem" data-target="void">THE VOID <span class="navitem__lock">🔒</span></button>
+  </nav>
+
+  <div class="gridarea">
+    <div class="card" id="dashboard">
+      <div class="card__eyebrow">OVERVIEW</div>
+      <div class="card__title">Dashboard</div>
+      <div class="card__stat">00:00:00</div>
+      <div class="card__body">Time since your last goodbye. Stats, streaks, and exit history will live here.</div>
+    </div>
+
+    <div class="card" id="transmissions">
+      <div class="card__eyebrow">PUBLIC LOG</div>
+      <div class="card__title">Transmissions</div>
+      <div class="card__body">Final words from people who logged off before you. A feed of farewell notes goes here.</div>
+    </div>
+
+    <div class="card" id="archive">
+      <div class="card__eyebrow">GALLERY</div>
+      <div class="card__title">Archive</div>
+      <div class="card__body">A visual record of past departures. Image grid / gallery placeholder.</div>
+    </div>
+
+    <div class="card card--locked" id="inbox">
+      <div class="card__eyebrow">PRIVATE</div>
+      <div class="card__title">Inbox</div>
+      <div class="card__body">Direct messages between verified members. Placeholder thread list.</div>
+      <div class="lockmask">
+        <div class="lockmask__icon">🔒</div>
+        <div class="lockmask__text">Verified members only</div>
+        <button class="btn btn--green unlock-trigger">LOG IN TO UNLOCK</button>
+      </div>
+    </div>
+
+    <div class="card card--locked" id="profile">
+      <div class="card__eyebrow">PRIVATE</div>
+      <div class="card__title">Profile</div>
+      <div class="card__body">Craft your own goodbye. Edit your name, your final message, your exit theme.</div>
+      <div class="lockmask">
+        <div class="lockmask__icon">🔒</div>
+        <div class="lockmask__text">Verified members only</div>
+        <button class="btn btn--green unlock-trigger">LOG IN TO UNLOCK</button>
+      </div>
+    </div>
+
+    <div class="card card--locked" id="void">
+      <div class="card__eyebrow">???</div>
+      <div class="card__title">The Void</div>
+      <div class="card__body">What happens after you hit send. Placeholder for the strangest part of the site.</div>
+      <div class="lockmask">
+        <div class="lockmask__icon">🔒</div>
+        <div class="lockmask__text">Verified members only</div>
+        <button class="btn btn--green unlock-trigger">LOG IN TO UNLOCK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>SIGNAL LOST — THANKS FOR STOPPING BY</footer>
+
+<!-- Auth modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal__tabs">
+      <button class="modal__tab is-active" id="tabLogin">LOG IN</button>
+      <button class="modal__tab" id="tabSignup">SIGN UP</button>
+    </div>
+
+    <form id="authForm">
+      <div class="field">
+        <label for="username">USERNAME</label>
+        <input id="username" autocomplete="username" required minlength="3" maxlength="24">
+      </div>
+      <div class="field">
+        <label for="password">PASSWORD</label>
+        <input id="password" type="password" autocomplete="current-password" required minlength="4">
+      </div>
+      <div class="modal__msg" id="modalMsg"></div>
+      <div class="modal__row">
+        <button type="submit" class="btn btn--green" id="submitBtn">LOG IN</button>
+      </div>
+    </form>
+    <button class="modal__close" id="modalClose">CLOSE</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const ACCOUNTS_KEY = 'goodbye-world-accounts';
+  let mode = 'login'; // or 'signup'
+  let currentUser = null;
+
+  // ---------- helpers ----------
+  async function sha256(text){
+    const enc = new TextEncoder().encode(text);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  async function getAccounts(){
+    try{
+      const res = await window.storage.get(ACCOUNTS_KEY, true);
+      return res && res.value ? JSON.parse(res.value) : {};
+    }catch(e){
+      return {};
+    }
+  }
+
+  async function saveAccounts(accounts){
+    try{
+      await window.storage.set(ACCOUNTS_KEY, JSON.stringify(accounts), true);
+      return true;
+    }catch(e){
+      console.error('Storage error', e);
+      return false;
+    }
+  }
+
+  // ---------- modal control ----------
+  const overlay = document.getElementById('modalOverlay');
+  const msgEl = document.getElementById('modalMsg');
+  const submitBtn = document.getElementById('submitBtn');
+  const tabLogin = document.getElementById('tabLogin');
+  const tabSignup = document.getElementById('tabSignup');
+  const form = document.getElementById('authForm');
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
+
+  function setMode(next){
+    mode = next;
+    tabLogin.classList.toggle('is-active', mode === 'login');
+    tabSignup.classList.toggle('is-active', mode === 'signup');
+    submitBtn.textContent = mode === 'login' ? 'LOG IN' : 'CREATE ACCOUNT';
+    passwordInput.autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+    msgEl.textContent = '';
+    msgEl.className = 'modal__msg';
+  }
+
+  function openModal(startMode){
+    setMode(startMode || 'login');
+    overlay.classList.add('is-open');
+    usernameInput.value = '';
+    passwordInput.value = '';
+    setTimeout(() => usernameInput.focus(), 30);
+  }
+  function closeModal(){ overlay.classList.remove('is-open'); }
+
+  document.getElementById('loginBtn').addEventListener('click', () => openModal('login'));
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
+  tabLogin.addEventListener('click', () => setMode('login'));
+  tabSignup.addEventListener('click', () => setMode('signup'));
+  document.querySelectorAll('.unlock-trigger').forEach(btn => {
+    btn.addEventListener('click', () => openModal('login'));
+  });
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape' && overlay.classList.contains('is-open')) closeModal();
+  });
+
+  // ---------- auth logic ----------
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+    msgEl.className = 'modal__msg';
+    msgEl.textContent = 'WORKING...';
+    submitBtn.disabled = true;
+
+    try{
+      const accounts = await getAccounts();
+      const hash = await sha256(password);
+
+      if(mode === 'signup'){
+        if(accounts[username]){
+          msgEl.textContent = 'THAT USERNAME IS ALREADY TAKEN';
+          msgEl.className = 'modal__msg is-error';
+        } else {
+          accounts[username] = hash;
+          const ok = await saveAccounts(accounts);
+          if(ok){
+            msgEl.textContent = 'ACCOUNT CREATED. WELCOME.';
+            msgEl.className = 'modal__msg is-ok';
+            logIn(username);
+            setTimeout(closeModal, 600);
+          } else {
+            msgEl.textContent = 'COULD NOT SAVE ACCOUNT. TRY AGAIN.';
+            msgEl.className = 'modal__msg is-error';
+          }
+        }
+      } else {
+        if(accounts[username] && accounts[username] === hash){
+          msgEl.textContent = 'VERIFIED.';
+          msgEl.className = 'modal__msg is-ok';
+          logIn(username);
+          setTimeout(closeModal, 500);
+        } else {
+          msgEl.textContent = 'USERNAME OR PASSWORD IS INCORRECT';
+          msgEl.className = 'modal__msg is-error';
+        }
+      }
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  function logIn(username){
+    currentUser = username;
+    renderAuthArea();
+    setLockedState(false);
+  }
+  function logOut(){
+    currentUser = null;
+    renderAuthArea();
+    setLockedState(true);
+  }
+
+  function renderAuthArea(){
+    const area = document.getElementById('authArea');
+    if(currentUser){
+      area.innerHTML = '';
+      const chip = document.createElement('span');
+      chip.className = 'user-chip';
+      chip.innerHTML = '<span class="user-chip__dot"></span>' + currentUser.toUpperCase();
+      const out = document.createElement('button');
+      out.className = 'btn btn--ghost';
+      out.textContent = 'LOG OFF';
+      out.addEventListener('click', logOut);
+      area.appendChild(chip);
+      area.appendChild(out);
+    } else {
+      area.innerHTML = '<button class="btn" id="loginBtn">LOG IN</button>';
+      document.getElementById('loginBtn').addEventListener('click', () => openModal('login'));
+    }
+  }
+
+  function setLockedState(locked){
+    document.querySelectorAll('.card--locked').forEach(card => {
+      card.classList.toggle('is-unlocked', !locked);
+    });
+  }
+
+  // ---------- side nav scroll + highlight ----------
+  document.querySelectorAll('.navitem').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.navitem').forEach(n => n.classList.remove('is-active'));
+      item.classList.add('is-active');
+      const target = document.getElementById(item.dataset.target);
+      if(target){
+        target.scrollIntoView({ behavior:'smooth', block:'center' });
+        target.classList.remove('is-pulsing');
+        requestAnimationFrame(() => target.classList.add('is-pulsing'));
+        setTimeout(() => target.classList.remove('is-pulsing'), 1200);
+      }
+    });
+  });
+
+})();
+</script>
+
+</body>
+                                                        </html>

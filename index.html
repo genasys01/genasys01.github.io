@@ -200,6 +200,7 @@
     overflow:hidden;
     transition:border-color .25s ease, box-shadow .25s ease;
     scroll-margin-top:90px;
+    cursor:pointer;
   }
   .card:hover{ border-color:var(--purple-soft); box-shadow:0 0 16px var(--purple-glow); }
   .card.is-pulsing{ animation:pulse 1.1s ease; }
@@ -233,48 +234,137 @@
   .card.is-unlocked .card__stat,
   .card.is-unlocked .card__title{ filter:none; }
 
-  /* ---------- pages ---------- */
-  .page{ display:none; }
-  .page.is-active{ display:block; }
+  /* ---------- FULL PAGE OVERLAY ---------- */
+  .full-page-overlay{
+    position:fixed; inset:0; background:var(--bg); z-index:100;
+    display:none; flex-direction:column; overflow-y:auto;
+  }
+  .full-page-overlay.is-active{ display:flex; }
 
-  .page__header{
+  .full-page-header{
     display:flex; align-items:center; justify-content:space-between;
-    margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--line);
+    padding:20px 28px; border-bottom:1px solid var(--line);
+    background:linear-gradient(to bottom, var(--panel), rgba(15,13,26,0));
+    position:sticky; top:0; z-index:10;
   }
-  .page__title{ font-family:var(--mono); font-size:18px; color:var(--green); text-shadow:0 0 10px var(--green-glow); }
-  .page__close{ background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:18px; }
-  .page__close:hover{ color:var(--text); }
+  .full-page-title{ font-family:var(--mono); font-size:20px; color:var(--green); text-shadow:0 0 10px var(--green-glow); }
+  .full-page-close{ background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:24px; }
+  .full-page-close:hover{ color:var(--text); }
 
-  .message-list{
-    display:flex; flex-direction:column; gap:12px; margin-bottom:20px; max-height:400px; overflow-y:auto;
+  .full-page-content{
+    flex:1; padding:28px; max-width:1200px; margin:0 auto; width:100%;
   }
-  .message-item{
-    border:1px solid var(--line); border-radius:4px; padding:12px; background:rgba(20,17,31,.5);
-  }
-  .message-item__from{ font-family:var(--mono); font-size:11px; color:var(--green); margin-bottom:4px; }
-  .message-item__text{ font-size:13px; line-height:1.5; color:var(--text); }
-  .message-item__time{ font-family:var(--mono); font-size:10px; color:var(--text-dim); margin-top:6px; }
 
-  .compose-form{
-    display:flex; flex-direction:column; gap:12px;
+  /* Member list */
+  .members-section{
+    margin-bottom:30px;
   }
-  .compose-field{ display:flex; flex-direction:column; gap:6px; }
-  .compose-field label{ font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:var(--text-dim); }
-  .compose-field input,
-  .compose-field textarea{
-    background:var(--bg); border:1px solid var(--line); border-radius:4px;
-    padding:10px 12px; color:var(--text); font-family:var(--sans); font-size:13px;
+  .members-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px;
   }
-  .compose-field textarea{ min-height:80px; resize:vertical; }
-  .compose-field input:focus-visible,
-  .compose-field textarea:focus-visible{
+  .member-btn{
+    padding:12px 16px; border:1px solid var(--line); border-radius:4px; background:var(--panel);
+    color:var(--text); font-family:var(--mono); font-size:12px; cursor:pointer;
+    transition:all .2s ease;
+  }
+  .member-btn:hover{ border-color:var(--purple-soft); box-shadow:0 0 10px var(--purple-glow); }
+  .member-btn.active{ border-color:var(--green-soft); color:var(--green); box-shadow:0 0 10px var(--green-glow); }
+
+  /* Message inbox */
+  .inbox-container{
+    display:grid; grid-template-columns:1fr 2fr; gap:20px;
+  }
+  .inbox-list{
+    border:1px solid var(--line); border-radius:6px; background:var(--panel); padding:12px;
+    max-height:600px; overflow-y:auto;
+  }
+  .inbox-thread{
+    padding:12px; margin-bottom:6px; border:1px solid var(--line); border-radius:4px;
+    background:rgba(20,17,31,.5); cursor:pointer; transition:all .2s ease;
+  }
+  .inbox-thread:hover{ border-color:var(--purple-soft); background:rgba(20,17,31,.8); }
+  .inbox-thread.active{ border-color:var(--green-soft); background:rgba(45,255,160,.1); }
+  .inbox-thread__name{ font-family:var(--mono); font-size:12px; color:var(--green); margin-bottom:4px; }
+  .inbox-thread__preview{ font-size:11px; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  .message-view{
+    border:1px solid var(--line); border-radius:6px; background:var(--panel); padding:16px;
+    display:flex; flex-direction:column; min-height:600px;
+  }
+  .message-view__header{
+    font-family:var(--mono); font-size:14px; color:var(--green); margin-bottom:16px; padding-bottom:12px;
+    border-bottom:1px solid var(--line);
+  }
+  .messages-display{
+    flex:1; overflow-y:auto; margin-bottom:16px; display:flex; flex-direction:column; gap:12px;
+  }
+  .message-bubble{
+    padding:12px; border-radius:4px; max-width:80%;
+  }
+  .message-bubble.own{
+    align-self:flex-end; background:rgba(45,255,160,.15); border:1px solid var(--green-soft);
+  }
+  .message-bubble.other{
+    align-self:flex-start; background:rgba(179,77,255,.15); border:1px solid var(--purple-soft);
+  }
+  .message-bubble__from{ font-family:var(--mono); font-size:10px; color:var(--green); margin-bottom:4px; }
+  .message-bubble__text{ font-size:13px; color:var(--text); }
+  .message-bubble__time{ font-family:var(--mono); font-size:9px; color:var(--text-dim); margin-top:4px; }
+
+  .compose-area{
+    display:flex; gap:8px;
+  }
+  .compose-area textarea{
+    flex:1; background:var(--bg); border:1px solid var(--line); border-radius:4px;
+    padding:10px 12px; color:var(--text); font-family:var(--sans); font-size:12px; resize:none; min-height:60px;
+  }
+  .compose-area textarea:focus-visible{
     outline:2px solid var(--green); outline-offset:1px; border-color:var(--green-soft);
   }
 
-  .compose-actions{
-    display:flex; gap:10px;
+  /* Notifications */
+  .notifications-container{
+    max-width:800px;
   }
-  .compose-actions .btn{ flex:1; }
+  .notification-card{
+    border:1px solid var(--line); border-radius:6px; padding:16px; margin-bottom:12px; background:var(--panel);
+  }
+  .notification-card__header{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .notification-card__icon{ font-size:18px; }
+  .notification-card__subject{ font-family:var(--mono); font-size:12px; color:var(--green); }
+  .notification-card__text{ font-size:13px; color:var(--text); margin-bottom:8px; line-height:1.5; }
+  .notification-card__time{ font-family:var(--mono); font-size:10px; color:var(--text-dim); }
+
+  .admin-form{
+    border:1px solid var(--line); border-radius:6px; padding:20px; background:var(--panel); max-width:600px; margin-top:20px;
+  }
+  .admin-form__field{ margin-bottom:16px; }
+  .admin-form__label{ font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:var(--text-dim); display:block; margin-bottom:6px; }
+  .admin-form__input,
+  .admin-form__textarea{
+    width:100%; background:var(--bg); border:1px solid var(--line); border-radius:4px;
+    padding:10px 12px; color:var(--text); font-family:var(--sans); font-size:12px;
+  }
+  .admin-form__textarea{ min-height:100px; resize:vertical; }
+  .admin-form__input:focus-visible,
+  .admin-form__textarea:focus-visible{
+    outline:2px solid var(--green); outline-offset:1px; border-color:var(--green-soft);
+  }
+
+  /* Story/Article display */
+  .story-container{
+    max-width:900px; margin:0 auto;
+  }
+  .story-header{
+    margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid var(--purple-soft);
+  }
+  .story-headline{ font-family:var(--mono); font-size:28px; color:var(--green); text-shadow:0 0 10px var(--green-glow); margin:0 0 8px; }
+  .story-date{ font-family:var(--mono); font-size:12px; color:var(--text-dim); letter-spacing:.1em; }
+  .story-content{ font-size:14px; line-height:1.8; color:var(--text); }
+  .story-content p{ margin:0 0 16px; }
+  .story-content strong{ color:var(--green); }
+  .story-content em{ color:var(--purple); font-style:italic; }
+  .story-author{ margin-top:24px; padding-top:16px; border-top:1px solid var(--line); font-size:12px; color:var(--text-dim); font-style:italic; }
 
   /* ---------- modal ---------- */
   .modal-overlay{
@@ -335,6 +425,7 @@
     .sidemenu__label{ display:none; }
     .navitem{ flex:0 0 auto; white-space:nowrap; }
     .gridarea{ grid-template-columns:repeat(2, 1fr); width:100%; }
+    .inbox-container{ grid-template-columns:1fr; }
   }
   @media (max-width:480px){
     .gridarea{ grid-template-columns:1fr; }
@@ -376,6 +467,7 @@
     <button class="navitem" data-target="void">THE VOID <span class="navitem__lock">🔒</span></button>
     <button class="navitem" data-target="messages" id="messagesNav">MESSAGES <span class="navitem__lock">🔒</span></button>
     <button class="navitem" data-target="notifications" id="notificationsNav">NOTIFICATIONS <span class="navitem__lock">🔒</span></button>
+    <button class="navitem" data-target="stories">STORIES</button>
   </nav>
 
   <div class="gridarea">
@@ -431,78 +523,116 @@
       </div>
     </div>
 
-    <!-- MESSAGES PAGE -->
-    <div class="page" id="messages" style="grid-column:1/-1;">
-      <div class="page__header">
-        <div class="page__title">📨 MEMBER MESSAGES</div>
-        <button class="page__close" onclick="closePage('messages')">✕</button>
-      </div>
+    <div class="card" id="stories" style="grid-column:1/-1;">
+      <div class="card__eyebrow">WISDOM</div>
+      <div class="card__title">Stories & Articles</div>
+      <div class="card__body">Reflections on endings, transitions, and the human experience of saying goodbye. Read stories from others navigating change and loss.</div>
+    </div>
+  </div>
+</div>
 
-      <div style="display:flex; gap:20px; flex-direction:column;">
-        <!-- Recipient List -->
-        <div>
-          <h3 style="font-family:var(--mono); font-size:12px; color:var(--purple); margin:0 0 10px; letter-spacing:.1em;">ACTIVE MEMBERS</h3>
-          <div id="membersList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
-        </div>
+<footer>SIGNAL LOST — THANKS FOR STOPPING BY</footer>
 
-        <!-- Selected Conversation -->
-        <div>
-          <div id="selectedConversation" style="display:none;">
-            <h3 style="font-family:var(--mono); font-size:12px; color:var(--purple); margin:0 0 10px; letter-spacing:.1em;">CONVERSATION WITH <span id="selectedMemberName" style="color:var(--green);"></span></h3>
-            <div class="message-list" id="messagesList"></div>
-
-            <form class="compose-form" id="messageForm">
-              <div class="compose-field">
-                <label>MESSAGE</label>
-                <textarea id="messageText" placeholder="Type your message..." required></textarea>
-              </div>
-              <div class="compose-actions">
-                <button type="submit" class="btn btn--green">SEND</button>
-                <button type="button" class="btn btn--ghost" onclick="clearSelected()">CLOSE</button>
-              </div>
-            </form>
-          </div>
-
-          <div id="noSelection" style="text-align:center; padding:40px; color:var(--text-dim); font-family:var(--mono); font-size:12px;">
-            SELECT A MEMBER TO START MESSAGING
-          </div>
-        </div>
-      </div>
+<!-- MESSAGES FULL-PAGE OVERLAY -->
+<div class="full-page-overlay" id="messagesOverlay">
+  <div class="full-page-header">
+    <div class="full-page-title">📨 MEMBER MESSAGES</div>
+    <button class="full-page-close" onclick="closePage('messages')">✕</button>
+  </div>
+  <div class="full-page-content">
+    <div class="members-section">
+      <h3 style="font-family:var(--mono); font-size:13px; color:var(--purple); margin:0 0 12px; letter-spacing:.1em;">SELECT A MEMBER</h3>
+      <div class="members-grid" id="membersList"></div>
     </div>
 
-    <!-- NOTIFICATIONS PAGE -->
-    <div class="page" id="notifications" style="grid-column:1/-1;">
-      <div class="page__header">
-        <div class="page__title">🔔 ADMIN NOTIFICATIONS</div>
-        <button class="page__close" onclick="closePage('notifications')">✕</button>
-      </div>
-
-      <div>
-        <h3 style="font-family:var(--mono); font-size:12px; color:var(--purple); margin:0 0 10px; letter-spacing:.1em;">FROM ADMINISTRATORS</h3>
-        <div class="message-list" id="notificationsList"></div>
-
-        <div style="margin-top:20px;">
-          <h3 style="font-family:var(--mono); font-size:12px; color:var(--purple); margin:0 0 10px; letter-spacing:.1em;">SEND MESSAGE TO ADMINS</h3>
-          <form class="compose-form" id="adminMessageForm">
-            <div class="compose-field">
-              <label>SUBJECT</label>
-              <input type="text" id="adminSubject" placeholder="Message subject..." required>
-            </div>
-            <div class="compose-field">
-              <label>MESSAGE</label>
-              <textarea id="adminMessage" placeholder="Your message to admins..." required></textarea>
-            </div>
-            <div class="compose-actions">
-              <button type="submit" class="btn btn--green">SUBMIT</button>
-            </div>
-          </form>
+    <div id="chatContainer" style="display:none;">
+      <div class="inbox-container">
+        <div class="inbox-list" id="conversationList"></div>
+        <div class="message-view">
+          <div class="message-view__header" id="chatHeader">Select a conversation</div>
+          <div class="messages-display" id="messagesDisplay"></div>
+          <div class="compose-area">
+            <textarea id="messageInput" placeholder="Type your message..." style="flex:1;"></textarea>
+            <button class="btn btn--green" onclick="sendMessage()" style="flex:0 0 80px;">SEND</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<footer>SIGNAL LOST — THANKS FOR STOPPING BY</footer>
+<!-- NOTIFICATIONS FULL-PAGE OVERLAY -->
+<div class="full-page-overlay" id="notificationsOverlay">
+  <div class="full-page-header">
+    <div class="full-page-title">🔔 ADMIN NOTIFICATIONS</div>
+    <button class="full-page-close" onclick="closePage('notifications')">✕</button>
+  </div>
+  <div class="full-page-content">
+    <div class="notifications-container">
+      <h3 style="font-family:var(--mono); font-size:13px; color:var(--purple); margin:0 0 12px; letter-spacing:.1em;">FROM ADMINISTRATORS</h3>
+      <div id="notificationsList"></div>
+
+      <div style="margin-top:30px;">
+        <h3 style="font-family:var(--mono); font-size:13px; color:var(--purple); margin:0 0 12px; letter-spacing:.1em;">SEND MESSAGE TO ADMINS</h3>
+        <form class="admin-form" id="adminMessageForm">
+          <div class="admin-form__field">
+            <label class="admin-form__label">SUBJECT</label>
+            <input type="text" id="adminSubject" class="admin-form__input" placeholder="Message subject..." required>
+          </div>
+          <div class="admin-form__field">
+            <label class="admin-form__label">MESSAGE</label>
+            <textarea id="adminMessage" class="admin-form__textarea" placeholder="Your message..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn--green">SUBMIT</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STORIES FULL-PAGE OVERLAY -->
+<div class="full-page-overlay" id="storiesOverlay">
+  <div class="full-page-header">
+    <div class="full-page-title">📖 STORIES & REFLECTIONS</div>
+    <button class="full-page-close" onclick="closePage('stories')">✕</button>
+  </div>
+  <div class="full-page-content">
+    <div class="story-container">
+      <div class="story-header">
+        <h1 class="story-headline">Goodbyes and Endings Need Careful Planning and Time to Grieve</h1>
+        <div class="story-date">9 August 2017</div>
+      </div>
+
+      <div class="story-content">
+        <p><strong>Change is hard and being prepared for relationships ending</strong> - be they with service users or colleagues - can help ease the transition.</p>
+
+        <p>Social work has always been about endings, whether it be a case closing, someone moving into residential care, or the death of a client. In my career I've closed hundreds of cases, waved goodbye to many clients (and colleagues), changed jobs regularly and attended funerals.</p>
+
+        <p>I was a bit perturbed when I found myself affected deeply by the end of my most recent job. All that work on attachment theory may have benefited the people with whom I worked, but it hadn't prepared me for my own thoughts and feelings. Despite knowing my departure date some weeks beforehand, I was in bits on my final day. I couldn't say cheerio to service users without crying, and I confess I actively avoided some colleagues because I couldn't face saying goodbye.</p>
+
+        <h2 style="font-family:var(--mono); font-size:16px; color:var(--green); margin:20px 0 12px;">Emotional Impact</h2>
+
+        <p>For days afterwards I was depressed and weepy. I missed the service users but also my colleagues; the team I'd worked with for over two years, who had me in stitches on a regular basis, and who shared the challenges of ever-smaller resources and growing mountains of paperwork.</p>
+
+        <p>I had believed I was unflappable and stoic with goodbyes and endings. I had always been very careful when working with service users to discuss timescales and boundaries. I believed I had dealt with relationships and ended cases sensitively and honestly. I'd kept in touch with colleagues from previous jobs too. But I hadn't considered the emotional impact this particular ending would have on me. Is it because I'm getting older – a dawning realisation of my own mortality – or because I'm just going soft?</p>
+
+        <p>I started to think about how we as social workers can better prepare ourselves for the ending of working relationships. I've talked to colleagues who have acknowledged that they've found similar situations difficult. <em>Planning is undoubtedly crucial.</em> Social work involves establishing relationships with people, or service users, in times of crisis. We intervene at a time of great imbalance and disempowerment. Our aim is to build a relationship based on trust, enablement and respect. Just as we place so much emphasis on establishing productive and open relationships at the beginning of our work, so we must ensure that the endings are carefully planned too, not only for service users but also for ourselves.</p>
+
+        <h2 style="font-family:var(--mono); font-size:16px; color:var(--green); margin:20px 0 12px;">Grieving</h2>
+
+        <p>To acknowledge the difficulty in transition is vital for our own mental health and survival. I'm sure many of us have experienced the wrench of moving jobs at least once. <strong>Change is difficult.</strong> It doesn't matter who we are or what we do. Allowing ourselves to feel emotion is also vital. More importantly, accepting that our emotions are valid is crucial. I found talking about how I felt difficult at first. I felt foolish and a fraud. The reality was, I was grieving a loss.</p>
+
+        <p>So, how can we avoid or at least, limit, the impact endings might have on us as social workers? Talking in supervision (or with colleagues) is undoubtedly useful. With hindsight, I think I should have done this as soon as I knew I was leaving. Once my initial period of grieving had abated, and I had settled into a new job, I was able to discuss my experiences with new colleagues. It has been helpful for me to recognise that what I felt was not unique, or weak, and indeed that many of my co-workers have experienced very similar feelings. I have since suggested peer supervision to create a more supportive environment in which to raise such topics which has been received positively. I've raised grief, loss and change as issues for reflective practice within the team.</p>
+
+        <p><strong>Grieving an ending or loss is not a sign of unprofessionalism, or of having blurred boundaries. It's a sign of being human.</strong></p>
+
+        <div class="story-author">
+          The author is a social worker based in the north west of England.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Auth modal -->
 <div class="modal-overlay" id="modalOverlay">
@@ -534,7 +664,6 @@
 (function(){
   const ACCOUNTS_KEY = 'goodbye-world-accounts';
   const MESSAGES_KEY = 'goodbye-world-messages';
-  const ADMIN_MESSAGES_KEY = 'goodbye-world-admin-messages';
   const NOTIFICATIONS_KEY = 'goodbye-world-notifications';
   
   let mode = 'login';
@@ -609,17 +738,22 @@
     return [user1, user2].sort().join('::');
   }
 
-  function sendMessage(from, to, text){
+  window.sendMessage = function(){
+    const text = document.getElementById('messageInput').value.trim();
+    if(!text || !selectedMember) return;
+
     const messages = getMessages();
-    const key = getConversationKey(from, to);
+    const key = getConversationKey(currentUser, selectedMember);
     if(!messages[key]) messages[key] = [];
     messages[key].push({
-      from,
+      from: currentUser,
       text,
       timestamp: new Date().toLocaleString()
     });
     saveMessages(messages);
-  }
+    document.getElementById('messageInput').value = '';
+    renderMessages();
+  };
 
   function getConversation(user1, user2){
     const messages = getMessages();
@@ -635,58 +769,42 @@
   function renderMembers(){
     getAllMembers().then(members => {
       const list = document.getElementById('membersList');
-      list.innerHTML = members.map(m => `
-        <button class="btn btn--ghost" style="flex:0 0 auto;" onclick="selectMember('${m}')">${m.toUpperCase()}</button>
-      `).join('');
+      if(members.length === 0){
+        list.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--text-dim);">NO OTHER MEMBERS YET</div>';
+      } else {
+        list.innerHTML = members.map(m => `
+          <button class="member-btn ${selectedMember === m ? 'active' : ''}" onclick="selectMember('${m}')">${m.toUpperCase()}</button>
+        `).join('');
+      }
     });
   }
 
   window.selectMember = function(member){
     selectedMember = member;
-    renderConversation();
+    renderMembers();
+    renderMessages();
   };
 
-  window.clearSelected = function(){
-    selectedMember = null;
-    renderConversation();
-  };
-
-  function renderConversation(){
-    const convEl = document.getElementById('selectedConversation');
-    const noSelEl = document.getElementById('noSelection');
-
-    if(!selectedMember){
-      convEl.style.display = 'none';
-      noSelEl.style.display = 'block';
-      return;
-    }
-
-    convEl.style.display = 'block';
-    noSelEl.style.display = 'none';
-
-    document.getElementById('selectedMemberName').textContent = selectedMember.toUpperCase();
+  function renderMessages(){
     const conv = getConversation(currentUser, selectedMember);
-    const list = document.getElementById('messagesList');
-    list.innerHTML = conv.map(msg => `
-      <div class="message-item">
-        <div class="message-item__from">${msg.from.toUpperCase()}</div>
-        <div class="message-item__text">${msg.text}</div>
-        <div class="message-item__time">${msg.timestamp}</div>
-      </div>
-    `).join('');
+    const display = document.getElementById('messagesDisplay');
+    const chatContainer = document.getElementById('chatContainer');
+    chatContainer.style.display = 'block';
+    document.getElementById('chatHeader').textContent = `CONVERSATION WITH ${selectedMember.toUpperCase()}`;
 
-    list.scrollTop = list.scrollHeight;
-  }
-
-  document.getElementById('messageForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const text = document.getElementById('messageText').value.trim();
-    if(text && selectedMember){
-      sendMessage(currentUser, selectedMember, text);
-      document.getElementById('messageText').value = '';
-      renderConversation();
+    if(conv.length === 0){
+      display.innerHTML = '<div style="text-align:center; color:var(--text-dim); padding:40px 0;">NO MESSAGES YET. START THE CONVERSATION!</div>';
+    } else {
+      display.innerHTML = conv.map(msg => `
+        <div class="message-bubble ${msg.from === currentUser ? 'own' : 'other'}">
+          <div class="message-bubble__from">${msg.from.toUpperCase()}</div>
+          <div class="message-bubble__text">${msg.text}</div>
+          <div class="message-bubble__time">${msg.timestamp}</div>
+        </div>
+      `).join('');
     }
-  });
+    display.scrollTop = display.scrollHeight;
+  }
 
   // ---------- admin notifications ----------
   function renderNotifications(){
@@ -695,12 +813,14 @@
     if(notifs.length === 0){
       list.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-dim); font-family:var(--mono); font-size:12px;">NO NOTIFICATIONS YET</div>';
     } else {
-      list.innerHTML = notifs.map((n, i) => `
-        <div class="message-item">
-          <div class="message-item__from">⚙️ ADMIN</div>
-          <div style="font-family:var(--mono); font-size:11px; color:var(--green); margin-bottom:4px;">${n.subject}</div>
-          <div class="message-item__text">${n.text}</div>
-          <div class="message-item__time">${n.timestamp}</div>
+      list.innerHTML = notifs.map((n) => `
+        <div class="notification-card">
+          <div class="notification-card__header">
+            <div class="notification-card__icon">⚙️</div>
+            <div class="notification-card__subject">${n.subject}</div>
+          </div>
+          <div class="notification-card__text">${n.text}</div>
+          <div class="notification-card__time">${n.timestamp}</div>
         </div>
       `).join('');
     }
@@ -711,25 +831,22 @@
     const subject = document.getElementById('adminSubject').value.trim();
     const text = document.getElementById('adminMessage').value.trim();
     if(subject && text){
-      // Save message for admins (in real app, this would go to server)
-      const userMsg = {
-        from: currentUser,
+      const notifs = getNotifications();
+      notifs.push({
         subject,
         text,
         timestamp: new Date().toLocaleString(),
-        type: 'user-to-admin'
-      };
-      const notifs = getNotifications();
-      notifs.push({...userMsg, type: 'user-message-received'});
+        from: currentUser
+      });
       saveNotifications(notifs);
-      
       document.getElementById('adminSubject').value = '';
       document.getElementById('adminMessage').value = '';
+      renderNotifications();
       alert('Message sent to admins!');
     }
   });
 
-  // Add some default admin notifications
+  // Add default notifications
   function initAdminNotifications(){
     const notifs = getNotifications();
     if(notifs.length === 0){
@@ -751,8 +868,9 @@
 
   // ---------- page navigation ----------
   window.closePage = function(pageId){
-    document.getElementById(pageId).classList.remove('is-active');
+    document.getElementById(pageId + 'Overlay').classList.remove('is-active');
     document.querySelectorAll('[data-target]').forEach(n => n.classList.remove('is-active'));
+    selectedMember = null;
   };
 
   // ---------- modal control ----------
@@ -878,8 +996,6 @@
     document.querySelectorAll('.card--locked').forEach(card => {
       card.classList.toggle('is-unlocked', !locked);
     });
-    document.getElementById('messagesNav').classList.toggle('is-active', !locked);
-    document.getElementById('notificationsNav').classList.toggle('is-active', !locked);
   }
 
   // ---------- side nav scroll + highlight ----------
@@ -889,14 +1005,15 @@
       item.classList.add('is-active');
       
       const target = item.dataset.target;
-      if(target === 'messages' || target === 'notifications'){
-        // New page-based navigation
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('is-active'));
-        document.getElementById(target).classList.add('is-active');
-        if(target === 'messages') renderMembers();
-        if(target === 'notifications') renderNotifications();
+      if(target === 'messages'){
+        document.getElementById('messagesOverlay').classList.add('is-active');
+        renderMembers();
+      } else if(target === 'notifications'){
+        document.getElementById('notificationsOverlay').classList.add('is-active');
+        renderNotifications();
+      } else if(target === 'stories'){
+        document.getElementById('storiesOverlay').classList.add('is-active');
       } else {
-        // Old card-based navigation
         const targetEl = document.getElementById(target);
         if(targetEl){
           targetEl.scrollIntoView({ behavior:'smooth', block:'center' });
